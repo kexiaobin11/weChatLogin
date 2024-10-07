@@ -27,7 +27,7 @@ public class WechatUserServiceImpl implements WechatUserService {
     }
 
     @Override
-    public void bindWeChatUserToUserFromUser(WechatUser weChatUser, User userDetails) {
+    public void bindWeChatUserToUser(WechatUser weChatUser, User userDetails) {
         WechatUser wechatUser = this.weChatUserRepository.findById(weChatUser.getId()).get();
         User user = this.userService.findByUsername(userDetails.getUsername());
         wechatUser.setUser(user);
