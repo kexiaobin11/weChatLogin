@@ -65,20 +65,11 @@ public class WxServiceImpl implements WxService {
             WxMpXmlMessage wxMessage = WxMpXmlMessage.fromXml(requestBody);
             // 扫码登录事件，如果为SCAN事件为扫码登录
             if (WxMsgUtil.isEventAndScan(wxMessage.getEvent())) {
-                return handleScanLogin(wxMessage);
+                return this.handleScanEvent(wxMessage);
             }
             // 如果为Subscribe绑定公众号事件
             if (WxMsgUtil.isEventAndSubscribe(wxMessage.getEvent())) {
-                // 对场景值进行
-                String token = wxMessage.getEventKey().replace("qrscene_", "");
-                User user = XAuthTokenBeforeFilter.map.get(token);
-                if (user != null) {
-                    WechatUser wechatUser = this.wechatUserService.getOneByOpenidAndAppId(wxMessage.getFromUser(), this.appId);
-                    this.wechatUserService.bindWeChatUserToUserFromUser(wechatUser, user);
-                    WxMpXmlOutTextMessage outTextMessage = WxMpXmlOutMessage.TEXT().content("欢迎关注梦云智").fromUser(wxMessage.getToUser())
-                            .toUser(wxMessage.getFromUser()).build();
-                    return outTextMessage.toXml();
-                }
+                return handleSubscribeEvent(wxMessage);
             }
         } catch (Exception e) {
             logger.error("解析请求体出错: ", e);
@@ -87,11 +78,19 @@ public class WxServiceImpl implements WxService {
         return "success"; // 返回成功消息
     }
 
-    @Override
-    public String handleScanLogin(WxMpXmlMessage wxMessage) {
-        this.wechatUserService.bindWxSceneStrToWeChatUser(wxMessage.getEventKey(), wxMessage.getFromUser(), this.appId);
-        WxMpXmlOutTextMessage outTextMessage = WxMpXmlOutMessage.TEXT().content("登录成功").fromUser(wxMessage.getToUser())
-                .toUser(wxMessage.getFromUser()).build();
-        return outTextMessage.toXml();
+    private String handleScanEvent(WxMpXmlMessage wxMessage) {
+        wechatUserService.bindWxSceneStrToWeChatUser(wxMessage.getEventKey(), wxMessage.getFromUser(), appId);
+        return WxMsgUtil.getReplyTextMsg(wxMessage, "Login successful");
+    }
+
+    private String handleSubscribeEvent(WxMpXmlMessage wxMessage) {
+        String token = wxMessage.getEventKey().replace("qrscene_", "");
+        User user = XAuthTokenBeforeFilter.map.get(token);
+        if (user != null) {
+            WechatUser wechatUser = wechatUserService.getOneByOpenidAndAppId(wxMessage.getFromUser(), appId);
+            wechatUserService.bindWeChatUserToUser(wechatUser, user);
+            return WxMsgUtil.getReplyTextMsg(wxMessage, "欢迎关注梦云智");
+        }
+        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "关联当前登录用户失败");
     }
 }

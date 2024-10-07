@@ -16,7 +16,7 @@ public interface WechatUserService {
      * @param weChatUser 微信用户
      * @param user 当前登录用户
      */
-    void bindWeChatUserToUserFromUser(WechatUser weChatUser, User user);
+    void bindWeChatUserToUser(WechatUser weChatUser, User user);
 
     /**
      * 微信绑定用户
