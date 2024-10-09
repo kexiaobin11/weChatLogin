@@ -1,5 +1,6 @@
 package com.yunzhi.ssewechat.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToOne;

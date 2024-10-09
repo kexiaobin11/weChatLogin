@@ -1,4 +1,4 @@
-import {Component, OnInit} from '@angular/core';
+import {Component, NgZone, OnInit} from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import {ActivatedRoute, Router} from '@angular/router';
 import {UserService} from "../../service/user.service";
@@ -38,6 +38,7 @@ export class LoginComponent implements OnInit {
   constructor(private builder: FormBuilder,
               private activatedRoute: ActivatedRoute,
               private router: Router,
+              private ngZone: NgZone,
               private userService: UserService,
               private sanitizer: DomSanitizer) {
     /** 创建表单 */
@@ -66,7 +67,7 @@ export class LoginComponent implements OnInit {
     this.login(user);
   }
 
-  login(user: { username: string, password: string }) {
+  login(user: { username: string, password: string }): void {
     this.userService.login(user)
       .subscribe(() => {
         this.userService.initCurrentLoginUser().subscribe({
@@ -80,26 +81,16 @@ export class LoginComponent implements OnInit {
   /**
    * 微信扫码登录
    */
-  onWeChatLogin() {
+  onWeChatLogin(): void {
     this.userService.getLoginQrCode()
       .subscribe(value => {
         this.weChatQrCode = value;
         this.loginModel = 'wechat';
-        this.startPolling(value.sceneStr);
+        this.userService.checkScan(value.sceneStr).subscribe(resultData => {
+          this.ngZone.run(() => {
+            this.router.navigateByUrl('dashboard').then();
+          });
+        });
       });
-  }
-
-  startPolling(sceneStr: string) {
-    const pollingInterval = 2000; // 每2秒轮询一次
-    let intervalId = setInterval(() => {
-      // 仅对 checkScan 进行轮询
-      this.userService.checkScan(sceneStr).subscribe(v => {
-        if (v.data !== null && v.code !== 1070) {
-          this.userService.setCurrentLoginUser(v.data as User);
-          clearInterval(intervalId); // 满足条件时停止轮询
-          this.router.navigateByUrl('dashboard').then();
-        }
-      });
-    }, pollingInterval);
   }
 }

@@ -36,7 +36,7 @@ public class MvcSecurityConfig {
                     .addFilterAfter(xAuthTokenAfterFilter, BasicAuthenticationFilter.class)
                     .authorizeHttpRequests(authorization ->
                             authorization.requestMatchers("wx/**").permitAll()
-                                    .requestMatchers("user/checkScan").permitAll()
+                                    .requestMatchers("/user/checkScan/**").permitAll()
                                     .anyRequest().authenticated()
                     )
                     .httpBasic(withDefaults()); // 启用HTTP基本认证

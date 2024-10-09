@@ -80,7 +80,7 @@ public class WxServiceImpl implements WxService {
 
     private String handleScanEvent(WxMpXmlMessage wxMessage) {
         wechatUserService.bindWxSceneStrToWeChatUser(wxMessage.getEventKey(), wxMessage.getFromUser(), appId);
-        return WxMsgUtil.getReplyTextMsg(wxMessage, "Login successful");
+        return WxMsgUtil.getReplyTextMsg(wxMessage, "登录成功");
     }
 
     private String handleSubscribeEvent(WxMpXmlMessage wxMessage) {
