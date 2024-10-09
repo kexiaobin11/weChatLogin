@@ -1,4 +1,4 @@
-import {Injectable} from '@angular/core';
+import {Injectable, NgZone} from '@angular/core';
 import {Observable, of, ReplaySubject, Subject} from 'rxjs';
 import {HttpClient, HttpHeaders, HttpParams} from '@angular/common/http';
 import {User} from '../entity/user';
@@ -28,7 +28,8 @@ export class UserService {
    * 登录二维码
    */
   constructor(protected httpClient: HttpClient,
-              protected router: Router) {
+              protected router: Router,
+              private ngZone: NgZone) {
   }
 
 
@@ -57,8 +58,24 @@ export class UserService {
   }
 
   checkScan(sceneStr: string): Observable<ResultData> {
-    const body = {sceneStr: sceneStr};
-    return this.httpClient.post<ResultData>(`${this.baseUrl}/checkScan`, body);
+    return new Observable<ResultData>((observer) => {
+      const eventSource = new EventSource('api/user/checkScan/' + sceneStr);  // 连接后端 SSE 端点
+      eventSource.onmessage = (event) => {
+        this.ngZone.run(() => {
+          const result = JSON.parse(event.data) as ResultData;
+          if (result.data !== null && result.code !== 1070) {
+            XAuthTokenInterceptor.setToken(event.lastEventId);
+            observer.next(result);
+            observer.complete();
+            eventSource.close();
+          }
+        });
+      };
+      eventSource.onerror = (error) => {
+        observer.error(error);
+        eventSource.close();
+      };
+    });
   }
 
 
