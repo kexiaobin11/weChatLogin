@@ -37,6 +37,7 @@ public class MvcSecurityConfig {
                     .authorizeHttpRequests(authorization ->
                             authorization.requestMatchers("wx/**").permitAll()
                                     .requestMatchers("/user/checkScan/**").permitAll()
+                                    .requestMatchers("/user/checkScanBind/**").permitAll()
                                     .anyRequest().authenticated()
                     )
                     .httpBasic(withDefaults()); // 启用HTTP基本认证

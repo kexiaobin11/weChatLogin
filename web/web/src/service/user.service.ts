@@ -3,13 +3,14 @@ import {Observable, of, ReplaySubject, Subject} from 'rxjs';
 import {HttpClient, HttpHeaders, HttpParams} from '@angular/common/http';
 import {User} from '../entity/user';
 import {catchError, map, tap} from 'rxjs/operators';
-declare var require: any;
-const { v4: uuid } = require('uuid');
 
-import {WechatQrCode} from "../entity/wechat-qr-code";
-import {ResultData} from "../entity/result-data";
-import {Router} from "@angular/router";
-import {XAuthTokenInterceptor} from "../interceptor/x-auth-token.interceptor";
+declare var require: any;
+const {v4: uuid} = require('uuid');
+
+import {WechatQrCode} from '../entity/wechat-qr-code';
+import {ResultData} from '../entity/result-data';
+import {Router} from '@angular/router';
+import {XAuthTokenInterceptor} from '../interceptor/x-auth-token.interceptor';
 
 
 @Injectable({
@@ -19,11 +20,13 @@ export class UserService {
 
   protected baseUrl = 'user';
   private currentLoginUser: User | null | undefined;
+  public eventSource: EventSource | null = null;
   /**
    * buffer 设置为 1
    * 只保留最新的登录用户
    */
   private currentLoginUser$ = new ReplaySubject<User>(1);
+
   /**
    * 登录二维码
    */
@@ -49,6 +52,27 @@ export class UserService {
       eventSource.onerror = (error) => {
         observer.error(error);
         eventSource.close();
+      };
+    });
+  }
+
+  checkScanBind(): Observable<ResultData> {
+    return new Observable<ResultData>((observer) => {
+      const token = XAuthTokenInterceptor.getToken();
+      this.eventSource = new EventSource('api/user/checkScanBind/' + token);  // 连接后端 SSE 端点
+      this.eventSource.onmessage = (event) => {
+        this.ngZone.run(() => {
+          const result = JSON.parse(event.data) as ResultData;
+          if (result.code !== 1070) {
+            observer.next(result);
+            observer.complete();
+            this.eventSource?.close();
+          }
+        });
+      };
+      this.eventSource.onerror = (error) => {
+        observer.error(error);
+        this.eventSource?.close();
       };
     });
   }
@@ -109,7 +133,7 @@ export class UserService {
     }));
   }
 
-  login(user: {username: string, password: string}): Observable<User> {
+  login(user: { username: string, password: string }): Observable<User> {
     // 新建Headers，并添加认证信息
     let headers = new HttpHeaders();
     // 添加认证信息
@@ -120,7 +144,6 @@ export class UserService {
     return this.httpClient.get<User>(`user/login`, {headers})
       .pipe(tap(data => this.setCurrentLoginUser(data)));
   }
-
 
 
   /**

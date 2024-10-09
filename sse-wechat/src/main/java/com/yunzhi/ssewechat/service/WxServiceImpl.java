@@ -89,6 +89,8 @@ public class WxServiceImpl implements WxService {
         if (user != null) {
             WechatUser wechatUser = wechatUserService.getOneByOpenidAndAppId(wxMessage.getFromUser(), appId);
             wechatUserService.bindWeChatUserToUser(wechatUser, user);
+            user.setWechatUser(wechatUser);
+            XAuthTokenBeforeFilter.map.put(token, user);
             return WxMsgUtil.getReplyTextMsg(wxMessage, "欢迎关注梦云智");
         }
         throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "关联当前登录用户失败");

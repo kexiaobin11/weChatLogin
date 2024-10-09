@@ -26,5 +26,7 @@ public interface UserService {
 
     User findById(Long id);
 
-    SseEmitter checkScan1(HttpServletRequest request, HttpServletResponse response, String sceneStr);
+    SseEmitter checkScan(String sceneStr);
+
+    SseEmitter checkScanBind(String token);
 }

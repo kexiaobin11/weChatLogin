@@ -25,6 +25,13 @@ public class CommandLineRunnerImpl implements CommandLineRunner, Ordered {
 
     @Override
     public void run(String... args) throws Exception {
+        if (userRepository.count() == 1) {
+            User user = new User();
+            user.setPassword("yunzhi");
+            user.setUsername("13920618851");
+            user.setName("yz");
+            this.userRepository.save(user);
+        }
     }
 
     @Override

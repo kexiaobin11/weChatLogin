@@ -60,7 +60,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
-    public SseEmitter checkScan1(HttpServletRequest request, HttpServletResponse response, String sceneStr) {
+    public SseEmitter checkScan(String sceneStr) {
         // 创建一个 SSE 发射器，设置超时时间为 30 秒
         SseEmitter emitter = new SseEmitter(30000L);
         AtomicBoolean isCompleted = new AtomicBoolean(false);
@@ -83,10 +83,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                         SecurityContextHolder.getContext().setAuthentication(authentication);
 
                         // 生成 x-auth-token 并返回给客户端
-                        String xAuthToken = request.getHeader("x-auth-token");
-                        if (xAuthToken == null || xAuthToken.isEmpty()) {
-                            xAuthToken = UUID.randomUUID().toString();
-                        }
+                        String xAuthToken = UUID.randomUUID().toString();
                         XAuthTokenBeforeFilter.map.put(xAuthToken, user);
 
                         // 将结果推送给前端，并附带 x-auth-token
@@ -123,6 +120,44 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         return emitter;
     }
 
+    @Override
+    public SseEmitter checkScanBind(String token) {
+        // 创建一个 SSE 发射器，设置超时时间为 30 秒
+        SseEmitter emitter = new SseEmitter(30000L);
+        AtomicBoolean isCompleted = new AtomicBoolean(false);
+        new Thread(() -> {
+            try {
+                // 循环检测用户是否扫码
+                while (!isCompleted.get()) {
+                    // 根据 sceneStr 从缓存中获取 WeChat 用户信息
+                    User user = XAuthTokenBeforeFilter.map.get(token);
+                    // 如果用户扫码成功
+                    if (user.getWechatUser() != null) {
+                        if (!isCompleted.get()) {  // 检查是否已经完成
+                            emitter.send(SseEmitter.event()
+                                    .data(ResultData.success(null)));
+                        }
+                        isCompleted.set(true);
+                        emitter.complete();
+                        break;
+                    }
+                    // 如果用户尚未扫码，推送等待消息
+                    if (!isCompleted.get()) {  // 检查是否已经完成
+                        emitter.send(SseEmitter.event().data(ResultData.success(1070, "用户未扫码", null)));
+                    }
+
+                    // 等待 2 秒后再次检查
+                    Thread.sleep(2000);
+                }
+            } catch (IOException | InterruptedException e) {
+                // 如果出现异常，终止 SSE 连接
+                isCompleted.set(true);
+                emitter.completeWithError(e);
+            }
+        }).start();
+
+        return emitter;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
