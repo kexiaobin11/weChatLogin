@@ -1,10 +1,11 @@
-import {Component, OnInit, SecurityContext} from '@angular/core';
+import {Component, NgZone, OnInit, SecurityContext} from '@angular/core';
 import {UserService} from "../../service/user.service";
 import {filter, first} from "rxjs/operators";
 import {User} from "../../entity/user";
 import {Router} from "@angular/router";
 import {DomSanitizer, SafeResourceUrl, SafeUrl} from "@angular/platform-browser";
 import {WechatQrCode} from "../../entity/wechat-qr-code";
+import {Subscription} from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -16,9 +17,11 @@ export class DashboardComponent implements OnInit {
   isShowQrCode = false;
   private intervalId: any;
   wechatQrCode: WechatQrCode = {} as WechatQrCode;
+  private subscription: Subscription | null = null;
 
   constructor(private userService: UserService,
               private router: Router,
+              private ngZone: NgZone,
               private sanitizer: DomSanitizer) { }
 
   ngOnInit(): void {
@@ -37,7 +40,17 @@ export class DashboardComponent implements OnInit {
     this.userService.generateBindQrCode().subscribe(v => {
       this.wechatQrCode = v;
       this.isShowQrCode = true;
-      this.startPolling();
+      this.userService.checkScanBind().subscribe(() => {
+        this.ngZone.run(() => {
+          this.userService.initCurrentLoginUser().subscribe(value => {
+            if (value.wechatUser !== null) {
+              clearInterval(this.intervalId); // 条件满足时停止轮询
+              this.user!.wechatUser = value.wechatUser;
+              this.isShowQrCode = false;
+            }
+          });
+        });
+      });
     });
   }
 
@@ -58,22 +71,6 @@ export class DashboardComponent implements OnInit {
 
   onClose(): void {
     this.isShowQrCode = false;
-    if (this.intervalId) {
-      clearInterval(this.intervalId); // 关闭时停止轮询
-    }
-  }
-
-  startPolling(): void {
-    const pollingInterval = 2000; // 每2秒轮询一次
-    this.intervalId = setInterval(() => {
-      // 仅对 checkScan 进行轮询
-      this.userService.initCurrentLoginUser().subscribe(v => {
-        if (v.wechatUser !== null) {
-          clearInterval(this.intervalId); // 条件满足时停止轮询
-          this.user!.wechatUser = v.wechatUser;
-          this.isShowQrCode = false;
-        }
-      });
-    }, pollingInterval);
+    this.userService.eventSource?.close();
   }
 }

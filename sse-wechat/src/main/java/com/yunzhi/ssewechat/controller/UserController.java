@@ -30,16 +30,15 @@ public class UserController {
         this.wxService = wxService;
     }
 
-//    @PostMapping("checkScan")
-//    @JsonView(CheckScanJsonView.class)
-//    public ResultData<User> checkScan(HttpServletRequest request, HttpServletResponse response, @RequestBody UserDto.CheckScanDto checkScanDto) {
-//        return this.userService.checkScan(request, response, checkScanDto.getSceneStr());
-//    }
-
     @GetMapping(value = "/checkScan/{sceneStr}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @JsonView(CheckScanJsonView.class)
-    public SseEmitter checkScan(HttpServletRequest request, HttpServletResponse response, @PathVariable String sceneStr) {
-        return this.userService.checkScan1(request, response, sceneStr);
+    public SseEmitter checkScan(@PathVariable String sceneStr) {
+        return this.userService.checkScan(sceneStr);
+    }
+
+    @GetMapping(value = "/checkScanBind/{token}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter checkScanBind(@PathVariable String token) {
+        return this.userService.checkScanBind(token);
     }
 
     @GetMapping("login")
