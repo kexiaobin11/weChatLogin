@@ -6,6 +6,7 @@ import com.yunzhi.ssewechat.resp.ResultData;
 import com.yunzhi.ssewechat.resp.ReturnCodeEnum;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Optional;
 
@@ -25,4 +26,6 @@ public interface UserService {
     Optional<User> getCurrentLoginUser();
 
     User findById(Long id);
+
+    SseEmitter checkScan1(HttpServletRequest request, HttpServletResponse response, String sceneStr);
 }

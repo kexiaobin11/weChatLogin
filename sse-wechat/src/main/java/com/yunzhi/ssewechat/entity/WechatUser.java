@@ -1,5 +1,6 @@
 package com.yunzhi.ssewechat.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonView;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToOne;
@@ -17,6 +18,7 @@ public class WechatUser extends BaseEntity<Long> {
 
     @OneToOne
     @JsonView(UserJsonView.class)
+    @JsonBackReference
     private User user;
 
     public WechatUser(String openid, String appId) {

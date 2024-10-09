@@ -10,10 +10,12 @@ import com.yunzhi.ssewechat.service.UserService;
 import com.yunzhi.ssewechat.service.WxService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.security.Principal;
 
@@ -28,10 +30,16 @@ public class UserController {
         this.wxService = wxService;
     }
 
-    @PostMapping("checkScan")
+//    @PostMapping("checkScan")
+//    @JsonView(CheckScanJsonView.class)
+//    public ResultData<User> checkScan(HttpServletRequest request, HttpServletResponse response, @RequestBody UserDto.CheckScanDto checkScanDto) {
+//        return this.userService.checkScan(request, response, checkScanDto.getSceneStr());
+//    }
+
+    @GetMapping(value = "/checkScan/{sceneStr}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @JsonView(CheckScanJsonView.class)
-    public ResultData<User> checkScan(HttpServletRequest request, HttpServletResponse response, @RequestBody UserDto.CheckScanDto checkScanDto) {
-        return this.userService.checkScan(request, response, checkScanDto.getSceneStr());
+    public SseEmitter checkScan(HttpServletRequest request, HttpServletResponse response, @PathVariable String sceneStr) {
+        return this.userService.checkScan1(request, response, sceneStr);
     }
 
     @GetMapping("login")
