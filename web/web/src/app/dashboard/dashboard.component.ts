@@ -18,13 +18,13 @@ export class DashboardComponent implements OnInit {
   wechatQrCode: WechatQrCode = {} as WechatQrCode;
 
   constructor(private userService: UserService,
-              private router:Router,
+              private router: Router,
               private sanitizer: DomSanitizer) { }
 
   ngOnInit(): void {
-    this.userService.getCurrentLoginUser$()
+    this.userService.initCurrentLoginUser()
       .pipe(filter(v => v !== null && v !== undefined))
-      .subscribe((data:User) => {
+      .subscribe((data: User) => {
         this.setUser(data);
       });
   }
@@ -33,12 +33,12 @@ export class DashboardComponent implements OnInit {
     this.user = user;
   }
 
-  onBindWeChat() {
+  onBindWeChat(): void{
     this.userService.generateBindQrCode().subscribe(v => {
       this.wechatQrCode = v;
       this.isShowQrCode = true;
       this.startPolling();
-    })
+    });
   }
 
   onLogout(): void {
@@ -56,14 +56,14 @@ export class DashboardComponent implements OnInit {
       );
   }
 
-  onClose() {
+  onClose(): void {
     this.isShowQrCode = false;
     if (this.intervalId) {
       clearInterval(this.intervalId); // 关闭时停止轮询
     }
   }
 
-  startPolling() {
+  startPolling(): void {
     const pollingInterval = 2000; // 每2秒轮询一次
     this.intervalId = setInterval(() => {
       // 仅对 checkScan 进行轮询

@@ -39,41 +39,14 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
     @Override
-    public ResultData<User> checkScan(HttpServletRequest request, HttpServletResponse response, String sceneStr) {
-        WechatUser wechatUser = WechatUserServiceImpl.map.get(sceneStr);
-        if (wechatUser == null) {
-            return ResultData.success(1070, "用户未扫码", null);
-        }
-        User user = this.getByWechatUser(wechatUser);
-
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(user, null, null);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        String xAuthToken = request.getHeader("x-auth-token");
-        if (xAuthToken == null || xAuthToken.isEmpty()) {
-            xAuthToken = UUID.randomUUID().toString();
-        }
-        XAuthTokenBeforeFilter.map.put(xAuthToken, user);
-        response.addHeader("x-auth-token", xAuthToken);
-        WechatUserServiceImpl.map.remove(sceneStr);
-        return ResultData.success(user);
-    }
-
-    @Override
     public User getByWechatUser(WechatUser wechatUser) {
         return userRepository.findByWechatUser(wechatUser).orElseThrow(EntityNotFoundException::new);
     }
 
     @Override
     public Optional<User> getCurrentLoginUser() {
-        logger.debug("初始化用户");
         Optional<User> user = null;
-
-        logger.debug("获取用户认证信息");
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        logger.debug("根据认证信息查询用户");
         if (authentication != null && authentication.isAuthenticated()) {
             user = userRepository.findByUsername(authentication.getName());
         }
@@ -90,11 +63,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     public SseEmitter checkScan1(HttpServletRequest request, HttpServletResponse response, String sceneStr) {
         // 创建一个 SSE 发射器，设置超时时间为 30 秒
         SseEmitter emitter = new SseEmitter(30000L);
-
-        // 状态标志
         AtomicBoolean isCompleted = new AtomicBoolean(false);
 
-        // 新建一个线程，避免阻塞主线程
         new Thread(() -> {
             try {
                 // 循环检测用户是否扫码
@@ -122,7 +92,7 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                         // 将结果推送给前端，并附带 x-auth-token
                         if (!isCompleted.get()) {  // 检查是否已经完成
                             emitter.send(SseEmitter.event()
-                                    .data(ResultData.success(user))
+                                    .data(ResultData.success(null))
                                     .id(xAuthToken));
                         }
 

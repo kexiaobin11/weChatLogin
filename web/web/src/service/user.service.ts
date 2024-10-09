@@ -32,6 +32,26 @@ export class UserService {
               private ngZone: NgZone) {
   }
 
+  checkScan(sceneStr: string): Observable<ResultData> {
+    return new Observable<ResultData>((observer) => {
+      const eventSource = new EventSource('api/user/checkScan/' + sceneStr);  // 连接后端 SSE 端点
+      eventSource.onmessage = (event) => {
+        this.ngZone.run(() => {
+          const result = JSON.parse(event.data) as ResultData;
+          if (result.code !== 1070) {
+            XAuthTokenInterceptor.setToken(event.lastEventId);
+            observer.next(result);
+            observer.complete();
+            eventSource.close();
+          }
+        });
+      };
+      eventSource.onerror = (error) => {
+        observer.error(error);
+        eventSource.close();
+      };
+    });
+  }
 
   /**
    * 生成绑定的二维码
@@ -56,28 +76,6 @@ export class UserService {
     const body = {sceneStr: uuid()};
     return this.httpClient.post<WechatQrCode>('wx/generatorQrCode', body);
   }
-
-  checkScan(sceneStr: string): Observable<ResultData> {
-    return new Observable<ResultData>((observer) => {
-      const eventSource = new EventSource('api/user/checkScan/' + sceneStr);  // 连接后端 SSE 端点
-      eventSource.onmessage = (event) => {
-        this.ngZone.run(() => {
-          const result = JSON.parse(event.data) as ResultData;
-          if (result.data !== null && result.code !== 1070) {
-            XAuthTokenInterceptor.setToken(event.lastEventId);
-            observer.next(result);
-            observer.complete();
-            eventSource.close();
-          }
-        });
-      };
-      eventSource.onerror = (error) => {
-        observer.error(error);
-        eventSource.close();
-      };
-    });
-  }
-
 
   /**
    * 请求当前登录用户

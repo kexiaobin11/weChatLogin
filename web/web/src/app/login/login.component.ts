@@ -88,7 +88,6 @@ export class LoginComponent implements OnInit {
         this.loginModel = 'wechat';
         this.userService.checkScan(value.sceneStr).subscribe(resultData => {
           this.ngZone.run(() => {
-            this.userService.setCurrentLoginUser(resultData.data as User);
             this.router.navigateByUrl('dashboard').then();
           });
         });

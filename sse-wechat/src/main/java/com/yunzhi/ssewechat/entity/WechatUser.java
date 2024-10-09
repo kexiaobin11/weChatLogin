@@ -18,7 +18,6 @@ public class WechatUser extends BaseEntity<Long> {
 
     @OneToOne
     @JsonView(UserJsonView.class)
-    @JsonBackReference
     private User user;
 
     public WechatUser(String openid, String appId) {

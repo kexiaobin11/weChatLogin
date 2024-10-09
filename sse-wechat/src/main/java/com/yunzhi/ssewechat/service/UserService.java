@@ -14,7 +14,6 @@ public interface UserService {
 
     User findByUsername(String username);
 
-    ResultData<User> checkScan(HttpServletRequest request, HttpServletResponse response, String sceneStr);
 
     /**
      * 根据微信用户获取到用户
